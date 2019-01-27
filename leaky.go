@@ -1,33 +1,40 @@
 package main
 
 import (
+	"archive/tar"
 	"compress/gzip"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+
 	"github.com/xi2/xz"
 )
 
-func readgz(file io.Reader) *gzip.Reader {
-	res, err := gzip.NewReader(file)
+func readgz(file io.Reader) *tar.Reader {
+	gz, err := gzip.NewReader(file)
 	if err != nil {
 		panic(err)
 	}
 
-	return res
+	t :=  tar.NewReader(gz)
+	return t
 }
 
-func readxz(file io.Reader) *xz.Reader {
-	res, err := xz.NewReader(file, 0)
+func readxz(file io.Reader) *tar.Reader {
+	xzip, err := xz.NewReader(file, 0)
 	if err != nil {
 		panic(err)
 	}
+	t :=  tar.NewReader(xzip)
 
-	return res
+	return t
 }
 
 func main() {
+	var t *tar.Reader
+
+	var err error
 	tarfile := os.Args[1]
 
 	fmt.Println("Start indexing of " + tarfile)
@@ -40,10 +47,11 @@ func main() {
 
 	switch filepath.Ext(tarfile) {
 	case ".gz":
-		readgz(f)
+		t = readgz(f)
 	case ".xz":
-		readxz(f)
+		t = readxz(f)
 	default:
 		fmt.Println("Extension not recognized", filepath.Ext(tarfile))
-	}
+		os.Exit(-1)
+	}	
 }
