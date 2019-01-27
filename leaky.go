@@ -68,5 +68,8 @@ func main() {
 		}
 
 		fmt.Println("Read ", h.Name)
+		if h.Typeflag == tar.TypeDir {
+			continue
+		}
 	}
 }
