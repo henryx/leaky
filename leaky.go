@@ -2,6 +2,7 @@ package main
 
 import (
 	"archive/tar"
+	"bufio"
 	"compress/gzip"
 	"fmt"
 	"io"
@@ -33,7 +34,7 @@ func readxz(file io.Reader) *tar.Reader {
 
 func main() {
 	var t *tar.Reader
-	var tarfile string
+	var line, tarfile string
 	var err error
 
 	if len(os.Args) > 1 {
@@ -70,6 +71,16 @@ func main() {
 		fmt.Println("Read ", h.Name)
 		if h.Typeflag == tar.TypeDir {
 			continue
+		}
+
+		reader := bufio.NewReader(t)
+		for {
+			line, err = reader.ReadString('\n')
+			if err != nil {
+				fmt.Println(err)
+				break
+			}
+			fmt.Println(line)
 		}
 	}
 }
