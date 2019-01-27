@@ -33,10 +33,15 @@ func readxz(file io.Reader) *tar.Reader {
 
 func main() {
 	var t *tar.Reader
-	var file io.Writer
-
+	var tarfile string
 	var err error
-	tarfile := os.Args[1]
+
+	if len(os.Args) > 1 {
+		tarfile = os.Args[1]
+	} else {
+		fmt.Println("Usage: ", os.Args[0], "<tarfile>")
+		os.Exit(-1)
+	}
 
 	fmt.Println("Start indexing of " + tarfile)
 
@@ -63,6 +68,5 @@ func main() {
 		}
 
 		fmt.Println("Read ", h.Name)
-		_, err = io.Copy(file, t)
 	}
 }
