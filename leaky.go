@@ -17,7 +17,7 @@ func readgz(file io.Reader) *tar.Reader {
 		panic(err)
 	}
 
-	t :=  tar.NewReader(gz)
+	t := tar.NewReader(gz)
 	return t
 }
 
@@ -26,13 +26,14 @@ func readxz(file io.Reader) *tar.Reader {
 	if err != nil {
 		panic(err)
 	}
-	t :=  tar.NewReader(xzip)
+	t := tar.NewReader(xzip)
 
 	return t
 }
 
 func main() {
 	var t *tar.Reader
+	var file io.Writer
 
 	var err error
 	tarfile := os.Args[1]
@@ -53,5 +54,15 @@ func main() {
 	default:
 		fmt.Println("Extension not recognized", filepath.Ext(tarfile))
 		os.Exit(-1)
-	}	
+	}
+
+	for {
+		h, err := t.Next()
+		if err == io.EOF {
+			break
+		}
+
+		fmt.Println("Read ", h.Name)
+		_, err = io.Copy(file, t)
+	}
 }
