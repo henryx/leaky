@@ -68,10 +68,10 @@ func main() {
 			break
 		}
 
-		fmt.Println("Read ", h.Name)
 		if h.Typeflag == tar.TypeDir {
 			continue
 		}
+		fmt.Println("Read ", h.Name)
 
 		reader := bufio.NewReader(t)
 		for {
@@ -80,7 +80,7 @@ func main() {
 				fmt.Println(err)
 				break
 			}
-			fmt.Println(line)
+			fmt.Print(line)
 		}
 	}
 }
