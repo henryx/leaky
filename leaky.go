@@ -4,10 +4,12 @@ import (
 	"archive/tar"
 	"bufio"
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/xi2/xz"
 )
@@ -30,6 +32,28 @@ func readxz(file io.Reader) *tar.Reader {
 	t := tar.NewReader(xzip)
 
 	return t
+}
+
+func process(line string) error {
+	var split []string
+
+	if strings.Contains(line, ";") {
+		split = strings.Split(line, ";")
+	} else if strings.Contains(line, ",") {
+		split = strings.Split(line, ",")
+	} else {
+		return errors.New("Separator not found in " + line)
+	}
+
+	email := strings.Split(split[0], "@")
+	password := split[1]
+
+	store(email, password)
+	return nil
+}
+
+func store(email []string, password string) {
+	// TODO: save in SQLite database
 }
 
 func main() {
@@ -80,7 +104,12 @@ func main() {
 				fmt.Println(err)
 				break
 			}
-			fmt.Print(line)
+
+			err := process(line)
+			if err != nil {
+				fmt.Println(err)
+				break
+			}
 		}
 	}
 }
