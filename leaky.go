@@ -53,7 +53,11 @@ func process(line string) error {
 	email := strings.Split(split[0], "@")
 	password := split[1]
 
-	store(email, password)
+	err := store(email, password)
+	if err != nil {
+		return errors.New("Store failed for record: '" + line + "': " + err.Error())
+	}
+
 	return nil
 }
 
