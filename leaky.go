@@ -51,7 +51,7 @@ func process(tx *sql.Tx, line string) error {
 	}
 
 	email := strings.Split(split[0], "@")
-	password := strings.TrimSuffix(split[1], "\n")
+	password := strings.TrimSuffix(strings.TrimSuffix(split[1], "\n"), "\r")
 
 	err := store(tx, email, password)
 	if err != nil {
@@ -72,13 +72,14 @@ func opendb() (*sql.DB, error) {
 		return nil, errors.New("Database not opened: " + err.Error())
 	}
 
+	db.Exec("PRAGMA synchronous = OFF")
+	db.Exec("PRAGMA journal_mode = WAL")
+
 	if err := db.QueryRow(query).Scan(&counted); err != nil {
 		return nil, errors.New("Database not opened: " + err.Error())
 	}
 
 	if counted == 0 {
-		db.Exec("PRAGMA synchronous = OFF")
-		db.Exec("PRAGMA journal_mode = WAL")
 		db.Exec("CREATE TABLE leak(domain, user, password)")
 	}
 
