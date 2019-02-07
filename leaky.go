@@ -89,10 +89,9 @@ func opendb() (*sql.DB, error) {
 func store(tx *sql.Tx, email []string, password string) error {
 	var err error
 
-	stmt, err := tx.Prepare("INSERT INTO leak VALUES($1, $2, $3")
+	stmt, err := tx.Prepare("INSERT INTO leak VALUES($1, $2, $3)")
 	if err != nil {
 		return errors.New("Statement error: " + err.Error())
-
 	}
 
 	_, err = stmt.Exec(email[1], email[0], password)
@@ -160,7 +159,6 @@ func main() {
 
 		reader := bufio.NewReader(t)
 		for {
-
 			line, err = reader.ReadString('\n')
 			if err != nil {
 				fmt.Println(err)
