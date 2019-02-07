@@ -37,7 +37,7 @@ func readxz(file io.Reader) *tar.Reader {
 	return t
 }
 
-func process(line string) error {
+func process(tx *sql.Tx, line string) error {
 	var split []string
 
 	if strings.Contains(line, ";") {
@@ -53,7 +53,7 @@ func process(line string) error {
 	email := strings.Split(split[0], "@")
 	password := split[1]
 
-	err := store(email, password)
+	err := store(tx, email, password)
 	if err != nil {
 		return errors.New("Store failed for record: '" + line + "': " + err.Error())
 	}
@@ -71,7 +71,6 @@ func opendb() (*sql.DB, error) {
 	if err != nil {
 		return nil, errors.New("Database not opened: " + err.Error())
 	}
-	defer db.Close()
 
 	if err := db.QueryRow(query).Scan(&counted); err != nil {
 		return nil, errors.New("Database not opened: " + err.Error())
@@ -86,20 +85,8 @@ func opendb() (*sql.DB, error) {
 	return db, nil
 }
 
-func store(email []string, password string) error {
+func store(tx *sql.Tx, email []string, password string) error {
 	var err error
-
-	db, err := opendb()
-	if err != nil {
-		return errors.New("Cannot create database schema: " + err.Error())
-	}
-	defer db.Close()
-
-	tx, err := db.Begin()
-	if err != nil {
-		return errors.New("Transaction error: " + err.Error())
-
-	}
 
 	stmt, err := tx.Prepare("INSERT INTO leak VALUES($1, $2, $3")
 	if err != nil {
@@ -111,8 +98,6 @@ func store(email []string, password string) error {
 	if err != nil {
 		tx.Rollback()
 		return errors.New("Cannot save record: " + err.Error())
-	} else {
-		tx.Commit()
 	}
 
 	return nil
@@ -148,6 +133,13 @@ func main() {
 		os.Exit(-1)
 	}
 
+	db, err := opendb()
+	if err != nil {
+		fmt.Println("Cannot create database schema: " + err.Error())
+		os.Exit(1)
+	}
+	defer db.Close()
+
 	for {
 		h, err := t.Next()
 		if err == io.EOF {
@@ -159,19 +151,27 @@ func main() {
 		}
 		fmt.Println("Read ", h.Name)
 
+		tx, err := db.Begin()
+		if err != nil {
+			fmt.Println("Transaction error: " + err.Error())
+			os.Exit(2)
+		}
+
 		reader := bufio.NewReader(t)
 		for {
+
 			line, err = reader.ReadString('\n')
 			if err != nil {
 				fmt.Println(err)
 				break
 			}
 
-			err := process(line)
+			err := process(tx, line)
 			if err != nil {
 				fmt.Println(err)
 				break
 			}
 		}
+		tx.Commit()
 	}
 }
