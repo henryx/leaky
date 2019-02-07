@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bufio"
 	"compress/gzip"
+	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -12,6 +13,8 @@ import (
 	"strings"
 
 	"github.com/xi2/xz"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func readgz(file io.Reader) *tar.Reader {
@@ -52,6 +55,31 @@ func process(line string) error {
 
 	store(email, password)
 	return nil
+}
+
+func opendb() (*sql.DB, error) {
+	var counted int
+	var err error
+
+	query := "SELECT count(*) FROM sqlite_master"
+
+	db, err := sql.Open("sqlite3", "leak.db")
+	if err != nil {
+		return nil, errors.New("Database not opened: " + err.Error())
+	}
+	defer db.Close()
+
+	if err := db.QueryRow(query).Scan(&counted); err != nil {
+		return nil, errors.New("Database not opened: " + err.Error())
+	}
+
+	if counted == 0 {
+		db.Exec("PRAGMA synchronous = OFF")
+		db.Exec("PRAGMA journal_mode = WAL")
+		db.Exec("CREATE TABLE leak(domain, user, password)")
+	}
+
+	return db, nil
 }
 
 func store(email []string, password string) {
