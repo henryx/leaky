@@ -160,8 +160,7 @@ func main() {
 		reader := bufio.NewReader(t)
 		for {
 			line, err = reader.ReadString('\n')
-			if err != nil {
-				fmt.Println(err)
+			if err == io.EOF {
 				break
 			}
 
