@@ -51,7 +51,7 @@ func process(tx *sql.Tx, line string) error {
 	}
 
 	email := strings.Split(split[0], "@")
-	password := split[1]
+	password := strings.TrimSuffix(split[1], "\n")
 
 	err := store(tx, email, password)
 	if err != nil {
