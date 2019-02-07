@@ -95,7 +95,7 @@ func store(tx *sql.Tx, email []string, password string) error {
 
 	}
 
-	_, err = stmt.Exec(email[0], email[1], password)
+	_, err = stmt.Exec(email[1], email[0], password)
 	if err != nil {
 		tx.Rollback()
 		return errors.New("Cannot save record: " + err.Error())
