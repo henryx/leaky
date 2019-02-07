@@ -82,8 +82,36 @@ func opendb() (*sql.DB, error) {
 	return db, nil
 }
 
-func store(email []string, password string) {
-	// TODO: save in SQLite database
+func store(email []string, password string) error {
+	var err error
+
+	db, err := opendb()
+	if err != nil {
+		return errors.New("Cannot create database schema: " + err.Error())
+	}
+	defer db.Close()
+
+	tx, err := db.Begin()
+	if err != nil {
+		return errors.New("Transaction error: " + err.Error())
+
+	}
+
+	stmt, err := tx.Prepare("INSERT INTO leak VALUES($1, $2, $3")
+	if err != nil {
+		return errors.New("Statement error: " + err.Error())
+
+	}
+
+	_, err = stmt.Exec(email[0], email[1], password)
+	if err != nil {
+		tx.Rollback()
+		return errors.New("Cannot save record: " + err.Error())
+	} else {
+		tx.Commit()
+	}
+
+	return nil
 }
 
 func main() {
