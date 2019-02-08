@@ -46,6 +46,8 @@ func process(tx *sql.Tx, line string) error {
 		split = strings.Split(line, ",")
 	} else if strings.Contains(line, ":") {
 		split = strings.Split(line, ":")
+	} else if strings.Contains(line, "|") {
+		split = strings.Split(line, "|")
 	} else {
 		return errors.New("Separator not found in " + line)
 	}
