@@ -53,8 +53,8 @@ func process(tx *sql.Tx, line string) error {
 	email := strings.Split(split[0], "@")
 	password := strings.TrimSuffix(strings.TrimSuffix(split[1], "\n"), "\r")
 
-	if len(email) != 2 {
-		return errors.New("Split failed for line: " + line)
+	if len(email) < 2 {
+		email = append(email, "")
 	}
 
 	err := store(tx, email, password)
