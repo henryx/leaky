@@ -109,10 +109,34 @@ func store(tx *sql.Tx, email []string, password string) error {
 	return nil
 }
 
-func start(t *tar.Reader) {
+func scanlines(db *sql.DB, reader *bufio.Reader) {
 	var line string
 	var err error
-	
+
+	tx, err := db.Begin()
+	if err != nil {
+		fmt.Println("Transaction error: " + err.Error())
+		os.Exit(2)
+	}
+
+	for {
+		line, err = reader.ReadString('\n')
+		if err == io.EOF {
+			break
+		}
+
+		err := process(tx, line)
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+	}
+	tx.Commit()
+}
+
+func start(t *tar.Reader) {
+	var err error
+
 	db, err := opendb()
 	if err != nil {
 		fmt.Println("Cannot create database schema: " + err.Error())
@@ -130,27 +154,8 @@ func start(t *tar.Reader) {
 			continue
 		}
 		fmt.Println("Read ", h.Name)
-
-		tx, err := db.Begin()
-		if err != nil {
-			fmt.Println("Transaction error: " + err.Error())
-			os.Exit(2)
-		}
-
 		reader := bufio.NewReader(t)
-		for {
-			line, err = reader.ReadString('\n')
-			if err == io.EOF {
-				break
-			}
-
-			err := process(tx, line)
-			if err != nil {
-				fmt.Println(err)
-				break
-			}
-		}
-		tx.Commit()
+		scanlines(db, reader)
 	}
 }
 
