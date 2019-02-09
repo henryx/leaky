@@ -109,36 +109,10 @@ func store(tx *sql.Tx, email []string, password string) error {
 	return nil
 }
 
-func main() {
-	var t *tar.Reader
-	var line, tarfile string
+func start(t *tar.Reader) {
+	var line string
 	var err error
-
-	if len(os.Args) > 1 {
-		tarfile = os.Args[1]
-	} else {
-		fmt.Println("Usage: ", os.Args[0], "<tarfile>")
-		os.Exit(-1)
-	}
-
-	fmt.Println("Start indexing of " + tarfile)
-
-	f, err := os.Open(tarfile)
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-
-	switch filepath.Ext(tarfile) {
-	case ".gz":
-		t = readgz(f)
-	case ".xz":
-		t = readxz(f)
-	default:
-		fmt.Println("Extension not recognized", filepath.Ext(tarfile))
-		os.Exit(-1)
-	}
-
+	
 	db, err := opendb()
 	if err != nil {
 		fmt.Println("Cannot create database schema: " + err.Error())
@@ -178,4 +152,37 @@ func main() {
 		}
 		tx.Commit()
 	}
+}
+
+func main() {
+	var t *tar.Reader
+	var tarfile string
+	var err error
+
+	if len(os.Args) > 1 {
+		tarfile = os.Args[1]
+	} else {
+		fmt.Println("Usage: ", os.Args[0], "<tarfile>")
+		os.Exit(-1)
+	}
+
+	fmt.Println("Start indexing of " + tarfile)
+
+	f, err := os.Open(tarfile)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	switch filepath.Ext(tarfile) {
+	case ".gz":
+		t = readgz(f)
+	case ".xz":
+		t = readxz(f)
+	default:
+		fmt.Println("Extension not recognized", filepath.Ext(tarfile))
+		os.Exit(-1)
+	}
+
+	start(t)
 }
