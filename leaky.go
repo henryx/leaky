@@ -180,6 +180,8 @@ func main() {
 	defer f.Close()
 
 	switch filepath.Ext(tarfile) {
+	case ".tar":
+		t = tar.NewReader(f)
 	case ".gz":
 		t = readgz(f)
 	case ".xz":
