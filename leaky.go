@@ -79,7 +79,11 @@ func readtar(db *sql.DB, tarfile *string) {
 
 func readdir(db *sql.DB, directory *string) {
 	readfile := func(path string, info os.FileInfo, err error) error {
-		if !info.IsDir() || !strings.Contains(info.Name(), DATABASE) {
+		if !info.IsDir() {
+			if !strings.Contains(info.Name(), DATABASE) {
+				return nil
+			}
+
 			fmt.Println("Read ", path)
 			f, err := os.Open(path)
 			if err != nil {
