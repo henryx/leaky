@@ -58,29 +58,7 @@ func readtar(db *sql.DB, tarfile *string) {
 		fmt.Println("Extension not recognized", filepath.Ext(*tarfile))
 		os.Exit(-1)
 	}
-	starttar(db, t)
-}
 
-func readdir(db *sql.DB, directory *string) {
-	readfile := func(path string, info os.FileInfo, err error) error {
-		if !info.IsDir() {
-			fmt.Println("Read ", path)
-			f, err := os.Open(path)
-			if err != nil {
-				fmt.Fprintln(os.Stderr, "Cannot open "+path+":", err.Error())
-			} else {
-				reader := bufio.NewReader(f)
-				
-				scanlines(db, reader)
-			}
-		}
-		return nil
-	}
-
-	filepath.Walk(*directory, readfile)
-}
-
-func starttar(db *sql.DB, t *tar.Reader) {
 	for {
 		h, err := t.Next()
 		if err == io.EOF {
@@ -94,6 +72,24 @@ func starttar(db *sql.DB, t *tar.Reader) {
 		reader := bufio.NewReader(t)
 		scanlines(db, reader)
 	}
+}
+
+func readdir(db *sql.DB, directory *string) {
+	readfile := func(path string, info os.FileInfo, err error) error {
+		if !info.IsDir() {
+			fmt.Println("Read ", path)
+			f, err := os.Open(path)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "Cannot open "+path+":", err.Error())
+			} else {
+				reader := bufio.NewReader(f)
+				scanlines(db, reader)
+			}
+		}
+		return nil
+	}
+
+	filepath.Walk(*directory, readfile)
 }
 
 func process(tx *sql.Tx, line string) error {
