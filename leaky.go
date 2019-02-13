@@ -61,6 +61,31 @@ func readtar(tarfile *string) {
 	starttar(t)
 }
 
+func starttar(t *tar.Reader) {
+	var err error
+
+	db, err := opendb()
+	if err != nil {
+		fmt.Println("Cannot create database schema: " + err.Error())
+		os.Exit(1)
+	}
+	defer db.Close()
+
+	for {
+		h, err := t.Next()
+		if err == io.EOF {
+			break
+		}
+
+		if h.Typeflag == tar.TypeDir {
+			continue
+		}
+		fmt.Println("Read ", h.Name)
+		reader := bufio.NewReader(t)
+		scanlines(db, reader)
+	}
+}
+
 func process(tx *sql.Tx, line string) error {
 	var split []string
 
@@ -156,31 +181,6 @@ func scanlines(db *sql.DB, reader *bufio.Reader) {
 		}
 	}
 	tx.Commit()
-}
-
-func starttar(t *tar.Reader) {
-	var err error
-
-	db, err := opendb()
-	if err != nil {
-		fmt.Println("Cannot create database schema: " + err.Error())
-		os.Exit(1)
-	}
-	defer db.Close()
-
-	for {
-		h, err := t.Next()
-		if err == io.EOF {
-			break
-		}
-
-		if h.Typeflag == tar.TypeDir {
-			continue
-		}
-		fmt.Println("Read ", h.Name)
-		reader := bufio.NewReader(t)
-		scanlines(db, reader)
-	}
 }
 
 func main() {
