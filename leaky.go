@@ -61,6 +61,10 @@ func readtar(tarfile *string) {
 	starttar(t)
 }
 
+func readdir(directory *string) {
+
+}
+
 func starttar(t *tar.Reader) {
 	var err error
 
@@ -186,12 +190,17 @@ func scanlines(db *sql.DB, reader *bufio.Reader) {
 func main() {
 
 	tarfile := kingpin.Flag("tarfile", "Set the tarfile to analyze").Short('T').String()
+	directory := kingpin.Flag("directory", "Set the directory to analyze").Short('D').String()
+
 	kingpin.CommandLine.HelpFlag.Short('h')
 	kingpin.Parse()
 
 	if *tarfile != "" {
-		fmt.Println("Start indexing of " + *tarfile)
+		fmt.Println("Start indexing of " + *tarfile + " tar file")
 		readtar(tarfile)
+	} else if *directory != "" {
+		fmt.Println("Start indexing of " + *directory + " directory")
+		readdir(directory)
 	} else {
 		kingpin.Usage()
 	}
