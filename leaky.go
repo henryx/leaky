@@ -38,6 +38,29 @@ func readxz(file io.Reader) *tar.Reader {
 	return t
 }
 
+func readtar(tarfile *string) {
+	var t *tar.Reader
+
+	f, err := os.Open(*tarfile)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	switch filepath.Ext(*tarfile) {
+	case ".tar":
+		t = tar.NewReader(f)
+	case ".gz":
+		t = readgz(f)
+	case ".xz":
+		t = readxz(f)
+	default:
+		fmt.Println("Extension not recognized", filepath.Ext(*tarfile))
+		os.Exit(-1)
+	}
+	start(t)
+}
+
 func process(tx *sql.Tx, line string) error {
 	var split []string
 
@@ -161,33 +184,14 @@ func start(t *tar.Reader) {
 }
 
 func main() {
-	var t *tar.Reader
 
-	tarfile := kingpin.Flag("tarfile", "Set the tarfile to analyze").Short('T').String()	
+	tarfile := kingpin.Flag("tarfile", "Set the tarfile to analyze").Short('T').String()
 	kingpin.CommandLine.HelpFlag.Short('h')
 	kingpin.Parse()
-	
+
 	if *tarfile != "" {
 		fmt.Println("Start indexing of " + *tarfile)
-
-		f, err := os.Open(*tarfile)
-		if err != nil {
-			panic(err)
-		}
-		defer f.Close()
-
-		switch filepath.Ext(*tarfile) {
-		case ".tar":
-			t = tar.NewReader(f)
-		case ".gz":
-			t = readgz(f)
-		case ".xz":
-			t = readxz(f)
-		default:
-			fmt.Println("Extension not recognized", filepath.Ext(*tarfile))
-			os.Exit(-1)
-		}
-		start(t)
+		readtar(tarfile)
 	} else {
 		kingpin.Usage()
 	}
