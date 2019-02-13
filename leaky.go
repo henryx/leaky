@@ -18,6 +18,9 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// DATABASE contains the database name
+const DATABASE = "leak.db"
+
 func readtgz(file io.Reader) *tar.Reader {
 	gz, err := gzip.NewReader(file)
 	if err != nil {
@@ -128,7 +131,7 @@ func opendb() (*sql.DB, error) {
 
 	query := "SELECT count(*) FROM sqlite_master"
 
-	db, err := sql.Open("sqlite3", "leak.db")
+	db, err := sql.Open("sqlite3", DATABASE)
 	if err != nil {
 		return nil, errors.New("Database not opened: " + err.Error())
 	}
@@ -207,7 +210,7 @@ func main() {
 
 	db, err := opendb()
 	if err != nil {
-		fmt.Println("Cannot create database schema: " + err.Error())
+		fmt.Println("Database error: " + err.Error())
 		os.Exit(1)
 	}
 	defer db.Close()
