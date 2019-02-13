@@ -18,7 +18,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func readgz(file io.Reader) *tar.Reader {
+func readtgz(file io.Reader) *tar.Reader {
 	gz, err := gzip.NewReader(file)
 	if err != nil {
 		panic(err)
@@ -28,7 +28,7 @@ func readgz(file io.Reader) *tar.Reader {
 	return t
 }
 
-func readxz(file io.Reader) *tar.Reader {
+func readtxz(file io.Reader) *tar.Reader {
 	xzip, err := xz.NewReader(file, 0)
 	if err != nil {
 		panic(err)
@@ -51,14 +51,14 @@ func readtar(tarfile *string) {
 	case ".tar":
 		t = tar.NewReader(f)
 	case ".gz":
-		t = readgz(f)
+		t = readtgz(f)
 	case ".xz":
-		t = readxz(f)
+		t = readtxz(f)
 	default:
 		fmt.Println("Extension not recognized", filepath.Ext(*tarfile))
 		os.Exit(-1)
 	}
-	start(t)
+	starttar(t)
 }
 
 func process(tx *sql.Tx, line string) error {
@@ -158,7 +158,7 @@ func scanlines(db *sql.DB, reader *bufio.Reader) {
 	tx.Commit()
 }
 
-func start(t *tar.Reader) {
+func starttar(t *tar.Reader) {
 	var err error
 
 	db, err := opendb()
