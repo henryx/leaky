@@ -62,7 +62,32 @@ func readtar(tarfile *string) {
 }
 
 func readdir(directory *string) {
+	var db *sql.DB
+	var err error
 
+	readfile := func(path string, info os.FileInfo, err error) error {
+		if !info.IsDir() {
+			fmt.Println("Read ", path)
+			f, err := os.Open(path)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "Cannot open "+path+":", err.Error())
+			} else {
+				reader := bufio.NewReader(f)
+				
+				scanlines(db, reader)
+			}
+		}
+		return nil
+	}
+
+	db, err = opendb()
+	if err != nil {
+		fmt.Println("Cannot create database schema: " + err.Error())
+		os.Exit(1)
+	}
+	defer db.Close()
+
+	filepath.Walk(*directory, readfile)
 }
 
 func starttar(t *tar.Reader) {
