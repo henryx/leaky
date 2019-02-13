@@ -38,7 +38,7 @@ func readtxz(file io.Reader) *tar.Reader {
 	return t
 }
 
-func readtar(tarfile *string) {
+func readtar(db *sql.DB, tarfile *string) {
 	var t *tar.Reader
 
 	f, err := os.Open(*tarfile)
@@ -58,13 +58,10 @@ func readtar(tarfile *string) {
 		fmt.Println("Extension not recognized", filepath.Ext(*tarfile))
 		os.Exit(-1)
 	}
-	starttar(t)
+	starttar(db, t)
 }
 
-func readdir(directory *string) {
-	var db *sql.DB
-	var err error
-
+func readdir(db *sql.DB, directory *string) {
 	readfile := func(path string, info os.FileInfo, err error) error {
 		if !info.IsDir() {
 			fmt.Println("Read ", path)
@@ -80,26 +77,10 @@ func readdir(directory *string) {
 		return nil
 	}
 
-	db, err = opendb()
-	if err != nil {
-		fmt.Println("Cannot create database schema: " + err.Error())
-		os.Exit(1)
-	}
-	defer db.Close()
-
 	filepath.Walk(*directory, readfile)
 }
 
-func starttar(t *tar.Reader) {
-	var err error
-
-	db, err := opendb()
-	if err != nil {
-		fmt.Println("Cannot create database schema: " + err.Error())
-		os.Exit(1)
-	}
-	defer db.Close()
-
+func starttar(db *sql.DB, t *tar.Reader) {
 	for {
 		h, err := t.Next()
 		if err == io.EOF {
@@ -228,12 +209,19 @@ func main() {
 		os.Exit(1)
 	}
 
+	db, err := opendb()
+	if err != nil {
+		fmt.Println("Cannot create database schema: " + err.Error())
+		os.Exit(1)
+	}
+	defer db.Close()
+
 	if *tarfile != "" {
 		fmt.Println("Start indexing of " + *tarfile + " tar file")
-		readtar(tarfile)
+		readtar(db, tarfile)
 	} else if *directory != "" {
 		fmt.Println("Start indexing of " + *directory + " directory")
-		readdir(directory)
+		readdir(db, directory)
 	} else {
 		kingpin.Usage()
 	}
