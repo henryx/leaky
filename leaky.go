@@ -195,6 +195,14 @@ func main() {
 	kingpin.CommandLine.HelpFlag.Short('h')
 	kingpin.Parse()
 
+	if *tarfile == "" && *directory == "" {
+		fmt.Fprintln(os.Stderr, "Please use -T or -D flag")
+		os.Exit(1)
+	} else if *tarfile != "" && *directory != "" {
+		fmt.Fprintf(os.Stderr, "Flags -T and -D are mutually exclusive")
+		os.Exit(1)
+	}
+
 	if *tarfile != "" {
 		fmt.Println("Start indexing of " + *tarfile + " tar file")
 		readtar(tarfile)
