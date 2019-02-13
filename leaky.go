@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/xi2/xz"
+	"gopkg.in/alecthomas/kingpin.v2"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -161,35 +162,33 @@ func start(t *tar.Reader) {
 
 func main() {
 	var t *tar.Reader
-	var tarfile string
-	var err error
 
-	if len(os.Args) > 1 {
-		tarfile = os.Args[1]
+	tarfile := kingpin.Flag("tarfile", "Set the tarfile to analyze").Short('T').String()	
+	kingpin.CommandLine.HelpFlag.Short('h')
+	kingpin.Parse()
+	
+	if *tarfile != "" {
+		fmt.Println("Start indexing of " + *tarfile)
+
+		f, err := os.Open(*tarfile)
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+
+		switch filepath.Ext(*tarfile) {
+		case ".tar":
+			t = tar.NewReader(f)
+		case ".gz":
+			t = readgz(f)
+		case ".xz":
+			t = readxz(f)
+		default:
+			fmt.Println("Extension not recognized", filepath.Ext(*tarfile))
+			os.Exit(-1)
+		}
+		start(t)
 	} else {
-		fmt.Println("Usage: ", os.Args[0], "<tarfile>")
-		os.Exit(-1)
+		kingpin.Usage()
 	}
-
-	fmt.Println("Start indexing of " + tarfile)
-
-	f, err := os.Open(tarfile)
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-
-	switch filepath.Ext(tarfile) {
-	case ".tar":
-		t = tar.NewReader(f)
-	case ".gz":
-		t = readgz(f)
-	case ".xz":
-		t = readxz(f)
-	default:
-		fmt.Println("Extension not recognized", filepath.Ext(tarfile))
-		os.Exit(-1)
-	}
-
-	start(t)
 }
