@@ -21,6 +21,8 @@ import (
 // DATABASE contains the database name
 const DATABASE = "leak.db"
 
+const MAX_TRANSACTIONS_PER_COMMIT = 1000000
+
 func readtgz(file io.Reader) *tar.Reader {
 	gz, err := gzip.NewReader(file)
 	if err != nil {
@@ -176,23 +178,34 @@ func store(tx *sql.Tx, email []string, password string) error {
 func scanlines(db *sql.DB, reader *bufio.Reader) {
 	var line string
 	var err error
+	var tx *sql.Tx
 
-	tx, err := db.Begin()
-	if err != nil {
-		fmt.Println("Transaction error: " + err.Error())
-		os.Exit(2)
-	}
-
+	i := 0
 	for {
 		line, err = reader.ReadString('\n')
 		if err == io.EOF {
 			break
 		}
 
+		if i == 0 {
+			tx, err = db.Begin()
+			if err != nil {
+				fmt.Println("Transaction error: " + err.Error())
+				break
+			}
+		}
+
 		err := process(tx, line)
 		if err != nil {
 			fmt.Println(err)
 			break
+		}
+
+		if i == MAX_TRANSACTIONS_PER_COMMIT {
+			i = 0
+			tx.Commit()
+		} else {
+			i++
 		}
 	}
 	tx.Commit()
