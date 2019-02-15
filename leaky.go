@@ -89,6 +89,8 @@ func readdir(db *sql.DB, directory *string) {
 			if err != nil {
 				fmt.Fprintln(os.Stderr, "Cannot open "+path+":", err.Error())
 			} else {
+				defer f.Close()
+
 				reader := bufio.NewReader(f)
 				scanlines(db, reader)
 			}
