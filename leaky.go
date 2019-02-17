@@ -18,13 +18,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-// DATABASE contains the database name
-const DATABASE = "leaks"
-
-// NOTE: user and password are forced because is not necessary
-const DBUSER = "leaks"
-const DBPASSWORD = "test"
-
 const MAX_TRANSACTIONS_PER_COMMIT = 1000000
 
 func readtgz(file io.Reader) *tar.Reader {
@@ -137,14 +130,18 @@ func opendb() (*sql.DB, error) {
 	var counted int
 	var err error
 
+	database := os.Getenv("DATABASE")
+	dbuser := os.Getenv("DBUSER")
+	dbpassword := os.Getenv("DBPASSWORD")
+
 	query := "SELECT COUNT(DISTINCT `table_name`) FROM `information_schema`.`columns` WHERE `table_schema` = ?"
 
-	db, err := sql.Open("mysql", DBUSER+":"+DBPASSWORD+"@unix(/tmp/mysql.sock)/"+DATABASE+"?loc=local")
+	db, err := sql.Open("mysql", dbuser+":"+dbpassword+"@unix(/tmp/mysql.sock)/"+database+"?loc=local")
 	if err != nil {
 		return nil, errors.New("Database not opened: " + err.Error())
 	}
 
-	if err := db.QueryRow(query, DATABASE).Scan(&counted); err != nil {
+	if err := db.QueryRow(query, database).Scan(&counted); err != nil {
 		return nil, errors.New("Database not opened: " + err.Error())
 	}
 
