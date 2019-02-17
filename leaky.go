@@ -19,7 +19,7 @@ import (
 )
 
 // DATABASE contains the database name
-const DATABASE = "leak.db"
+const DATABASE = "leaks"
 
 // NOTE: user and password are forced because is not necessary
 const DBUSER = "leaks"
