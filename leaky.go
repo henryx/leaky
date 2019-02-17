@@ -15,11 +15,15 @@ import (
 	"github.com/xi2/xz"
 	"gopkg.in/alecthomas/kingpin.v2"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 // DATABASE contains the database name
 const DATABASE = "leak.db"
+
+// NOTE: user and password are forced because is not necessary
+const DBUSER = "leaks"
+const DBPASSWORD = "test"
 
 const MAX_TRANSACTIONS_PER_COMMIT = 1000000
 
@@ -137,22 +141,19 @@ func opendb() (*sql.DB, error) {
 	var counted int
 	var err error
 
-	query := "SELECT count(*) FROM sqlite_master"
+	query := "SELECT COUNT(DISTINCT `table_name`) FROM `information_schema`.`columns` WHERE `table_schema` = ?"
 
-	db, err := sql.Open("sqlite3", DATABASE)
+	db, err := sql.Open("mysql", DBUSER+":"+DBPASSWORD+"@unix(/tmp/mysql.sock)/"+DATABASE+"?loc=local")
 	if err != nil {
 		return nil, errors.New("Database not opened: " + err.Error())
 	}
 
-	db.Exec("PRAGMA synchronous = OFF")
-	db.Exec("PRAGMA journal_mode = WAL")
-
-	if err := db.QueryRow(query).Scan(&counted); err != nil {
+	if err := db.QueryRow(query, DATABASE).Scan(&counted); err != nil {
 		return nil, errors.New("Database not opened: " + err.Error())
 	}
 
 	if counted == 0 {
-		db.Exec("CREATE TABLE leak(domain, user, password)")
+		db.Exec("CREATE TABLE leak(domain varchar(30), user varchar(30), password varchar(4096))")
 	}
 
 	return db, nil
@@ -161,7 +162,7 @@ func opendb() (*sql.DB, error) {
 func store(tx *sql.Tx, email []string, password string) error {
 	var err error
 
-	stmt, err := tx.Prepare("INSERT INTO leak VALUES($1, $2, $3)")
+	stmt, err := tx.Prepare("INSERT INTO leak VALUES(?, ?, ?)")
 	if err != nil {
 		return errors.New("Statement error: " + err.Error())
 	}
