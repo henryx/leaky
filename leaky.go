@@ -100,13 +100,13 @@ func process(tx *sql.Tx, line string) error {
 	var split []string
 
 	if strings.Contains(line, ";") {
-		split = strings.Split(line, ";")
+		split = strings.SplitN(line, ";", 2)
 	} else if strings.Contains(line, ",") {
-		split = strings.Split(line, ",")
+		split = strings.SplitN(line, ",", 2)
 	} else if strings.Contains(line, ":") {
-		split = strings.Split(line, ":")
+		split = strings.SplitN(line, ":", 2)
 	} else if strings.Contains(line, "|") {
-		split = strings.Split(line, "|")
+		split = strings.SplitN(line, "|", 2)
 	} else {
 		return errors.New("Separator not found in " + line)
 	}
