@@ -201,11 +201,36 @@ func scanlines(db *sql.DB, reader *bufio.Reader) {
 	tx.Commit()
 }
 
+func checkparams(db, usr, pwd *string) (*string, *string, *string) {
+	validate := func(variable *string, envvar string) (string) {
+		var retval string
+
+		// If parameter has not passed from command line, it is readed from environment variable
+		if *variable != "" {
+			retval = *variable
+		} else {
+			retval = os.Getenv(envvar)
+			if retval == "" {
+				fmt.Fprintln(os.Stderr, "Parameter or environment variable was not passed:", envvar)
+				os.Exit(1)
+			}
+		}
+		return retval
+	}
+
+	database := validate(db, "DATABASE")
+	dbusr := validate(usr, "DBUSER")
+	dbpwd := validate(pwd, "DBPASSWORD")
+
+
+	return &database, &dbusr, &dbpwd
+}
+
 func main() {
 
 	tarfile := kingpin.Flag("tarfile", "Set the tarfile to analyze").Short('T').String()
 	directory := kingpin.Flag("directory", "Set the directory to analyze").Short('D').String()
-	database :=  kingpin.Flag("db", "Set the database name").Short('d').String()
+	database := kingpin.Flag("db", "Set the database name").Short('d').String()
 	dbuser := kingpin.Flag("user", "Set the user").Short('u').String()
 	dbpassword := kingpin.Flag("password", "Set the password").Short('W').String()
 
@@ -219,6 +244,8 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Flags -T and -D are mutually exclusive")
 		os.Exit(1)
 	}
+
+	database, dbuser, dbpassword = checkparams(database, dbuser, dbpassword)
 
 	db, err := opendb(*database, *dbuser, *dbpassword)
 	if err != nil {
