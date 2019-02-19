@@ -151,7 +151,7 @@ func opendb(database, dbuser, dbpassword, dbhost string) (*sql.DB, error) {
 	}
 
 	if counted == 0 {
-		db.Exec("CREATE TABLE leak(domain varchar(30), user varchar(30), password varchar(4096))")
+		db.Exec("CREATE TABLE leak(domain varchar(255), user varchar(255), password varchar(4096))")
 	}
 
 	return db, nil
