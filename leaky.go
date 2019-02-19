@@ -128,11 +128,20 @@ func process(tx *sql.Tx, line string) error {
 
 func opendb(database, dbuser, dbpassword, dbhost string) (*sql.DB, error) {
 	var counted int
+	var params, proto string
 	var err error
 
 	query := "SELECT COUNT(DISTINCT `table_name`) FROM `information_schema`.`columns` WHERE `table_schema` = ?"
 
-	db, err := sql.Open("mysql", dbuser+":"+dbpassword+"@unix("+dbhost+")/"+database+"?loc=local")
+	params = "charset=utf8mb4"
+	if strings.HasPrefix(dbhost, "/") {
+		proto = "unix"
+		params = params + "&loc=local"
+	} else {
+		proto = "tcp"
+	}
+
+	db, err := sql.Open("mysql", dbuser+":"+dbpassword+"@"+proto+"("+dbhost+")/"+database+"?"+params)
 	if err != nil {
 		return nil, errors.New("Database not opened: " + err.Error())
 	}
