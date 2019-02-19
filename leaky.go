@@ -126,13 +126,9 @@ func process(tx *sql.Tx, line string) error {
 	return nil
 }
 
-func opendb() (*sql.DB, error) {
+func opendb(database, dbuser, dbpassword string) (*sql.DB, error) {
 	var counted int
 	var err error
-
-	database := os.Getenv("DATABASE")
-	dbuser := os.Getenv("DBUSER")
-	dbpassword := os.Getenv("DBPASSWORD")
 
 	query := "SELECT COUNT(DISTINCT `table_name`) FROM `information_schema`.`columns` WHERE `table_schema` = ?"
 
@@ -209,6 +205,9 @@ func main() {
 
 	tarfile := kingpin.Flag("tarfile", "Set the tarfile to analyze").Short('T').String()
 	directory := kingpin.Flag("directory", "Set the directory to analyze").Short('D').String()
+	database :=  kingpin.Flag("db", "Set the database name").Short('d').String()
+	dbuser := kingpin.Flag("user", "Set the user").Short('u').String()
+	dbpassword := kingpin.Flag("password", "Set the password").Short('W').String()
 
 	kingpin.CommandLine.HelpFlag.Short('h')
 	kingpin.Parse()
@@ -221,7 +220,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := opendb()
+	db, err := opendb(*database, *dbuser, *dbpassword)
 	if err != nil {
 		fmt.Println("Database error: " + err.Error())
 		os.Exit(1)
