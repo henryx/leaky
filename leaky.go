@@ -201,8 +201,8 @@ func scanlines(db *sql.DB, reader *bufio.Reader) {
 	tx.Commit()
 }
 
-func checkparams(db, usr, pwd *string) (*string, *string, *string) {
-	validate := func(variable *string, envvar string) (string) {
+func checkparams(db, usr, pwd, host *string) (*string, *string, *string, *string) {
+	validate := func(variable *string, envvar string) string {
 		var retval string
 
 		// If parameter has not passed from command line, it is readed from environment variable
@@ -221,9 +221,9 @@ func checkparams(db, usr, pwd *string) (*string, *string, *string) {
 	database := validate(db, "DATABASE")
 	dbusr := validate(usr, "DBUSER")
 	dbpwd := validate(pwd, "DBPASSWORD")
+	dbhost := validate(host, "DBHOST")
 
-
-	return &database, &dbusr, &dbpwd
+	return &database, &dbusr, &dbpwd, &dbhost
 }
 
 func main() {
@@ -233,6 +233,7 @@ func main() {
 	database := kingpin.Flag("db", "Set the database name").Short('d').String()
 	dbuser := kingpin.Flag("user", "Set the user").Short('u').String()
 	dbpassword := kingpin.Flag("password", "Set the password").Short('W').String()
+	dbhost := kingpin.Flag("host", "Set the host").Short('H').String()
 
 	kingpin.CommandLine.HelpFlag.Short('h')
 	kingpin.Parse()
@@ -245,7 +246,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	database, dbuser, dbpassword = checkparams(database, dbuser, dbpassword)
+	database, dbuser, dbpassword, dbhost = checkparams(database, dbuser, dbpassword, dbhost)
 
 	db, err := opendb(*database, *dbuser, *dbpassword)
 	if err != nil {
