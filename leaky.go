@@ -126,13 +126,13 @@ func process(tx *sql.Tx, line string) error {
 	return nil
 }
 
-func opendb(database, dbuser, dbpassword string) (*sql.DB, error) {
+func opendb(database, dbuser, dbpassword, dbhost string) (*sql.DB, error) {
 	var counted int
 	var err error
 
 	query := "SELECT COUNT(DISTINCT `table_name`) FROM `information_schema`.`columns` WHERE `table_schema` = ?"
 
-	db, err := sql.Open("mysql", dbuser+":"+dbpassword+"@unix(/tmp/mysql.sock)/"+database+"?loc=local")
+	db, err := sql.Open("mysql", dbuser+":"+dbpassword+"@unix("+dbhost+")/"+database+"?loc=local")
 	if err != nil {
 		return nil, errors.New("Database not opened: " + err.Error())
 	}
@@ -248,7 +248,7 @@ func main() {
 
 	database, dbuser, dbpassword, dbhost = checkparams(database, dbuser, dbpassword, dbhost)
 
-	db, err := opendb(*database, *dbuser, *dbpassword)
+	db, err := opendb(*database, *dbuser, *dbpassword, *dbhost)
 	if err != nil {
 		fmt.Println("Database error: " + err.Error())
 		os.Exit(1)
