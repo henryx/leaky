@@ -21,6 +21,8 @@ import (
 
 const MAX_TRANSACTIONS_PER_COMMIT = 1000000
 
+var partition *bool
+
 func readtgz(file io.Reader) *tar.Reader {
 	gz, err := gzip.NewReader(file)
 	if err != nil {
@@ -175,7 +177,7 @@ func store(tx *sql.Tx, email []string, password string) error {
 	return nil
 }
 
-func partition(db *sql.DB) {
+func addpartition(db *sql.DB) {
 	var lastinsert int
 	if err := db.QueryRow("SELECT LAST_INSERT_ID()").Scan(&lastinsert); err != nil {
 		return
@@ -201,7 +203,10 @@ func scanlines(db *sql.DB, reader *bufio.Reader) {
 		}
 
 		if i == 0 {
-			partition(db)
+			if *partition {
+				addpartition(db)
+			}
+
 			tx, err = db.Begin()
 			if err != nil {
 				fmt.Println("Transaction error: " + err.Error())
@@ -258,6 +263,7 @@ func main() {
 	dbuser := kingpin.Flag("user", "Set the user").Short('u').String()
 	dbpassword := kingpin.Flag("password", "Set the password").Short('W').String()
 	dbhost := kingpin.Flag("host", "Set the host").Short('H').String()
+	partition = kingpin.Flag("partition", "Use partitioned table in database").Short('P').Bool()
 
 	kingpin.CommandLine.HelpFlag.Short('h')
 	kingpin.Parse()
