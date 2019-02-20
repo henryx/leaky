@@ -22,6 +22,7 @@ import (
 const MAX_TRANSACTIONS_PER_COMMIT = 1000000
 
 var partition *bool
+var database *string
 
 func readtgz(file io.Reader) *tar.Reader {
 	gz, err := gzip.NewReader(file)
@@ -259,7 +260,7 @@ func main() {
 
 	tarfile := kingpin.Flag("tarfile", "Set the tarfile to analyze").Short('T').String()
 	directory := kingpin.Flag("directory", "Set the directory to analyze").Short('D').String()
-	database := kingpin.Flag("db", "Set the database name").Short('d').String()
+	database = kingpin.Flag("db", "Set the database name").Short('d').String()
 	dbuser := kingpin.Flag("user", "Set the user").Short('u').String()
 	dbpassword := kingpin.Flag("password", "Set the password").Short('W').String()
 	dbhost := kingpin.Flag("host", "Set the host").Short('H').String()
