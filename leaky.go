@@ -10,7 +10,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/xi2/xz"
@@ -156,6 +155,9 @@ func opendb(database, dbuser, dbpassword, dbhost string) (*sql.DB, error) {
 
 	if counted == 0 {
 		db.Exec("CREATE TABLE leak(id int not null auto_increment, domain varchar(255), user varchar(255), password text, PRIMARY KEY (id)) DEFAULT CHARSET 'utf8mb4'")
+		if *partition {
+			db.Exec("ALTER TABLE leak PARTITION BY KEY(id) PARTITIONS 500")
+		}
 	}
 
 	return db, nil
@@ -178,19 +180,6 @@ func store(tx *sql.Tx, email []string, password string) error {
 	return nil
 }
 
-func addpartition(db *sql.DB) {
-	var lastinsert int
-	if err := db.QueryRow("SELECT LAST_INSERT_ID()").Scan(&lastinsert); err != nil {
-		return
-	}
-	query := "ALTER TABLE leak PARTITION BY RANGE(id) (PARTITION p" +
-		strconv.Itoa(lastinsert) + " VALUES LESS THAN (" +
-		strconv.Itoa(lastinsert+MAX_TRANSACTIONS_PER_COMMIT) +
-		"))"
-
-	db.Exec(query)
-}
-
 func scanlines(db *sql.DB, reader *bufio.Reader) {
 	var line string
 	var err error
@@ -204,10 +193,6 @@ func scanlines(db *sql.DB, reader *bufio.Reader) {
 		}
 
 		if i == 0 {
-			if *partition {
-				addpartition(db)
-			}
-
 			tx, err = db.Begin()
 			if err != nil {
 				fmt.Println("Transaction error: " + err.Error())
