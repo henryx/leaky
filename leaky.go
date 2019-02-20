@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/xi2/xz"
@@ -151,7 +152,7 @@ func opendb(database, dbuser, dbpassword, dbhost string) (*sql.DB, error) {
 	}
 
 	if counted == 0 {
-		db.Exec("CREATE TABLE leak(domain varchar(255), user varchar(255), password text) DEFAULT CHARSET 'utf8mb4'")
+		db.Exec("CREATE TABLE leak(id int not null auto_increment, domain varchar(255), user varchar(255), password text, PRIMARY KEY (id)) DEFAULT CHARSET 'utf8mb4'")
 	}
 
 	return db, nil
@@ -160,7 +161,7 @@ func opendb(database, dbuser, dbpassword, dbhost string) (*sql.DB, error) {
 func store(tx *sql.Tx, email []string, password string) error {
 	var err error
 
-	stmt, err := tx.Prepare("INSERT INTO leak VALUES(?, ?, ?)")
+	stmt, err := tx.Prepare("INSERT INTO leak (domain, user, password) VALUES(?, ?, ?)")
 	if err != nil {
 		return errors.New("Statement error: " + err.Error())
 	}
@@ -172,6 +173,20 @@ func store(tx *sql.Tx, email []string, password string) error {
 	}
 
 	return nil
+}
+
+func partition(db *sql.DB) {
+	var lastinsert int
+	if err := db.QueryRow("SELECT LAST_INSERT_ID()").Scan(&lastinsert); err != nil {
+		return
+	}
+	query := "ALTER TABLE leak PARTITION BY RANGE(id) (PARTITION p" +
+		strconv.Itoa(lastinsert) + " VALUES LESS THAN (" +
+		strconv.Itoa(lastinsert+MAX_TRANSACTIONS_PER_COMMIT) +
+		"))"
+
+	fmt.Println(query)
+	db.Exec(query)
 }
 
 func scanlines(db *sql.DB, reader *bufio.Reader) {
@@ -187,6 +202,7 @@ func scanlines(db *sql.DB, reader *bufio.Reader) {
 		}
 
 		if i == 0 {
+			partition(db)
 			tx, err = db.Begin()
 			if err != nil {
 				fmt.Println("Transaction error: " + err.Error())
