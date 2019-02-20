@@ -185,7 +185,6 @@ func partition(db *sql.DB) {
 		strconv.Itoa(lastinsert+MAX_TRANSACTIONS_PER_COMMIT) +
 		"))"
 
-	fmt.Println(query)
 	db.Exec(query)
 }
 
