@@ -170,6 +170,7 @@ func store(tx *sql.Tx, email []string, password string) error {
 	if err != nil {
 		return errors.New("Statement error: " + err.Error())
 	}
+	defer stmt.Close()
 
 	_, err = stmt.Exec(email[1], email[0], password)
 	if err != nil {
